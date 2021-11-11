@@ -40,8 +40,13 @@ function love.load()
   scoreFont = love.graphics.newFont('font.ttf', 32)
 
   victoryFont = love.graphics.newFont('font.ttf', 24)
-
   love.graphics.setFont(smallFont)
+
+  sounds = {
+    ['paddle_hit'] = love.audio.newSource('paddle_hit.wav', 'static'),
+    ['point_scored'] = love.audio.newSource('point_scored.wav', 'static'),
+    ['wall_hit'] = love.audio.newSource('wall_hit.wav', 'static')
+  }
 
   push:setupScreen(VIRTUAL_WIDTH, VIRTUAL_HEIGHT, WINDOW_WIDTH, WINDOW_HEIGHT, {
     fullscreen = false,
@@ -69,12 +74,21 @@ function love.load()
 end
 
 function love.update(dt)
-  if gameState == 'play' then
+  if gameState == 'serve' then
+
+    ball.dy = math.random(-50, 50)
+    if servingPlayer == 1 then
+      ball.dx = math.random(140, 200)
+    else
+      ball.dx = -math.random(140, 200)
+    end
+  elseif gameState == 'play' then
 
     if ball:collides(player1) then
-      -- deflect the ball to the right
       ball.dx = -ball.dx * 1.03
       ball.x = player1.x + 5
+
+      sounds['paddle_hit']:play()
 
       if ball.dy < 0 then
         -- deflect the ball down
@@ -89,6 +103,8 @@ function love.update(dt)
       ball.dx = -ball.dx * 1.03
       ball.x = player2.x - 4
 
+      sounds['paddle_hit']:play()
+
       if ball.dy < 0 then
         ball.dy = -math.random(10, 150)
       else
@@ -99,37 +115,46 @@ function love.update(dt)
     if ball.y <= 0 then
       ball.y = 0
       ball.dy = -ball.dy
+
+      sounds['wall_hit']:play()
     end
 
     if ball.y >= VIRTUAL_HEIGHT - 4 then
       ball.y = VIRTUAL_HEIGHT - 4
       ball.dy = -ball.dy
+
+      sounds['wall_hit']:play()
     end
-  end
 
-  if ball.x < 0 then
-    player2Score = player2Score + 1
-    servingPlayer = 1
-    ball:reset()
+    if ball.x < 0 then
+      player2Score = player2Score + 1
+      servingPlayer = 1
+      
+      sounds['point_scored']:play()
 
-    if player2Score >= 3 then 
-      gameState = 'victory'
-      winningPlayer = 2
-    else
-      gameState = 'serve'
+      if player2Score == 5 then 
+        gameState = 'victory'
+        winningPlayer = 2
+      else
+        gameState = 'serve'
+        ball:reset()
+      end
     end
-  end
+  
 
-  if ball.x > VIRTUAL_WIDTH then
-    player1Score = player1Score + 1
-    servingPlayer = 2
-    ball:reset()
+    if ball.x > VIRTUAL_WIDTH then
+      player1Score = player1Score + 1
+      servingPlayer = 2
 
-    if player1Score >= 3 then 
-      gameState = 'victory'
-      winningPlayer = 1
-    else
-      gameState = 'serve'
+      sounds['point_scored']:play()
+
+      if player1Score == 5 then 
+        gameState = 'victory'
+        winningPlayer = 1
+      else
+        gameState = 'serve'
+        ball:reset()
+      end
     end
   end
 
